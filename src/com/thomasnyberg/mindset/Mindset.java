@@ -29,14 +29,18 @@ public class Mindset extends Activity {
   }
 
   private class UpdateGUI extends AsyncTask<Void, Integer, Void> {
+    protected void wasteSomeTime(int time) {
+      try {
+        Thread.sleep(time);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
+
     protected Void doInBackground(Void... params) {
       int i = 0;
       for (;;) {
-        try {
-          Thread.sleep(1000);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
+        wasteSomeTime(1000);
         publishProgress(++i);
       }
     }
