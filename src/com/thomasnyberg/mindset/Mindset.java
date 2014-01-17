@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
 
+import android.os.AsyncTask;
+
 public class Mindset extends Activity {
   Terminal term;
 
@@ -69,13 +71,36 @@ public class Mindset extends Activity {
   @Override
   protected void onStart() {
     super.onStart();
-    for (int i = 0; i < 31; i++) {
-      term.writeLine("Line " + Integer.toString(i + 1));
-    }
+    new MindsetDataStream().execute();
   }
 
   @Override
   protected void onResume() {
     super.onResume();
+  }
+
+  private class MindsetDataStream extends AsyncTask<Void, String, Void> {
+    protected void onPreExecute() {}
+
+    protected Void doInBackground(Void... params) {
+      publishProgress("Attempting to connect to Mindstream.");
+
+      BluetoothConn conn = new BluetoothConn("Mindset");
+      conn.connect();
+      publishProgress("Successfully connected!");
+
+      publishProgress("Receiving data...");
+      String data;
+      for (;;) {
+        data = conn.getData();
+        publishProgress(data);
+      }
+    }
+
+    protected void onProgressUpdate(String... progress) {
+      term.writeLine(progress[0]);
+    }
+
+    protected void onPostExecute(Void... result) {}
   }
 }
