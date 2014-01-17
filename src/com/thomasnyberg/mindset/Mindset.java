@@ -4,12 +4,34 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
 
-import android.os.AsyncTask;
-import java.lang.Thread;
-
-
 public class Mindset extends Activity {
   Terminal term;
+
+  private class Terminal {
+    private TextView window;
+    private int maxLines = 30; /*Hardcoded value is bad. Works for my phone.*/
+    private String[] buffer = new String[maxLines];
+
+    Terminal(TextView win) {
+      window = win;
+    }
+
+    public void fillLines() {
+      for (int i = 0; i < maxLines; i++) {
+        buffer[i] = "Line " + Integer.toString(i + 1);
+      }
+      writeBuffer();
+    }
+
+    private void writeBuffer() {
+      String text = "";
+      for (int i = 0; i < maxLines; i++) {
+        text += buffer[i] + "\n";
+      }
+      window.setText(text);
+    }
+  }
+    
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -21,29 +43,11 @@ public class Mindset extends Activity {
   @Override
   protected void onStart() {
     super.onStart();
-
-    /*new UpdateGUI().execute();*/
+    term.fillLines();
   }
 
-  protected void wasteSomeTime(int time) {
-    try {
-      Thread.sleep(time);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-  }
-
-  private class UpdateGUI extends AsyncTask<Void, Integer, Void> {
-    protected Void doInBackground(Void... params) {
-      int i = 0;
-      for (;;) {
-        wasteSomeTime(1000);
-        publishProgress(++i);
-      }
-    }
-
-    protected void onProgressUpdate(Integer... progress) {
-      term.writeLine(progress[0]);
-    }
+  @Override
+  protected void onResume() {
+    super.onResume();
   }
 }
