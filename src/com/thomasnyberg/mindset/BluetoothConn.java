@@ -1,9 +1,21 @@
 package com.thomasnyberg.mindset;
 
 import java.lang.Thread;
+import android.bluetooth.BluetoothAdapter;
 
 public class BluetoothConn {
-  BluetoothConn(String name) {}
+  BluetoothAdapter myBluetoothAdapter = null;
+  public boolean error = false;
+  public String errorString = "";
+
+  BluetoothConn(String name) {
+    myBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+    /* Make sure connection blocks until Bluetooth is enabled on the phone. */
+    while (!myBluetoothAdapter.isEnabled()) {
+      wasteSomeTime(500);
+    }
+  }
 
   private void wasteSomeTime(int msec) {
     try {
@@ -13,13 +25,11 @@ public class BluetoothConn {
     }
   }
 
-  public void connect() {
-    wasteSomeTime(2000);
-  }
+  public void connect() {}
 
   private int counter = 1;
   public String getData() {
-    wasteSomeTime(2000);
+    wasteSomeTime(1000);
     return "data" + Integer.toString(counter++);
   }
 }

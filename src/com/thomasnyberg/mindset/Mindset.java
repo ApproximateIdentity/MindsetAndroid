@@ -3,12 +3,14 @@ package com.thomasnyberg.mindset;
 import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
+import android.bluetooth.BluetoothAdapter;
 
 import android.os.AsyncTask;
+import android.content.Intent;
+
 
 public class Mindset extends Activity {
   Terminal term;
-
   private class Terminal {
     private TextView window;
 
@@ -66,12 +68,34 @@ public class Mindset extends Activity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
     term = new Terminal((TextView) findViewById(R.id.mainWindow));
+
+    /* I am making sure the BluetoothAdapter is turned on in the UI thread
+       out of convenience so that I don't need to start a new activity later.
+       However, even if that is changed later, 
+       BluetoothAdapter.getDefaultAdapter must still first be called here
+       instead of first in the other thread by AsyncTask. It is a bug in
+       Android. See the following link for more info:
+
+          "http://stackoverflow.com/questions/5920578/" +
+          "bluetoothadapter-getdefault-throwing" +
+          "-runtimeexception-while-not-in-activity"
+    */
+    BluetoothAdapter myBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+    if (myBluetoothAdapter == null) {
+      term.writeLine("Error: BluetoothAdapter");
+    } else if (!myBluetoothAdapter.isEnabled()) {
+      Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE); 
+      int REQUEST_ENABLE_BT = 1;
+      startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+
+      new MindsetDataStream().execute();
+    }
+
   }
 
   @Override
   protected void onStart() {
     super.onStart();
-    new MindsetDataStream().execute();
   }
 
   @Override
@@ -87,14 +111,19 @@ public class Mindset extends Activity {
 
       BluetoothConn conn = new BluetoothConn("Mindset");
       conn.connect();
-      publishProgress("Successfully connected!");
+      if (conn.error) {
+        publishProgress("Error: " + conn.errorString);
+      } else {
+        publishProgress("Successfully connected!");
 
-      publishProgress("Receiving data...");
-      String data;
-      for (;;) {
-        data = conn.getData();
-        publishProgress(data);
+        publishProgress("Receiving data...");
+        String data;
+        for (;;) {
+          data = conn.getData();
+          publishProgress(data);
+        }
       }
+      return null;
     }
 
     protected void onProgressUpdate(String... progress) {
