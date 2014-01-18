@@ -10,14 +10,7 @@ import java.io.InputStream;
 import java.io.IOException;
 
 public class BluetoothConn {
-  private InputStream dataStream = null;
-  private BluetoothAdapter myBluetoothAdapter = null;
-  private BluetoothDevice mindset = null;
-  private BluetoothSocket btSock = null;
-  public boolean error = false;
-  public String errorString = "";
-
-  BluetoothConn(String name) {
+  BluetoothConn() {
     myBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
     /* Make sure connection blocks until Bluetooth is enabled on the phone. */
@@ -26,13 +19,8 @@ public class BluetoothConn {
     }
   }
 
-  private void wasteSomeTime(int msec) {
-    try {
-      Thread.sleep(msec);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-  }
+  public boolean error = false;
+  public String errorString = "";
 
   public void connect() {
     /* The following is my Mindset's address. */
@@ -76,7 +64,6 @@ public class BluetoothConn {
     }
   }
 
-  private int counter = 1;
   public String getData() {
     wasteSomeTime(500);
     int datum = 0;
@@ -88,5 +75,18 @@ public class BluetoothConn {
       return "error";
     }
     return "data" + Integer.toString(datum);
+  }
+
+  private InputStream dataStream = null;
+  private BluetoothAdapter myBluetoothAdapter = null;
+  private BluetoothDevice mindset = null;
+  private BluetoothSocket btSock = null;
+
+  private void wasteSomeTime(int msec) {
+    try {
+      Thread.sleep(msec);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
   }
 }
