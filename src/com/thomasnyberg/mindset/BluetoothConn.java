@@ -5,11 +5,15 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import java.util.UUID;
 import android.bluetooth.BluetoothSocket;
+import java.io.InputStream;
 
 import java.io.IOException;
 
 public class BluetoothConn {
-  BluetoothAdapter myBluetoothAdapter = null;
+  private InputStream dataStream = null;
+  private BluetoothAdapter myBluetoothAdapter = null;
+  private BluetoothDevice mindset = null;
+  private BluetoothSocket btSock = null;
   public boolean error = false;
   public String errorString = "";
 
@@ -31,9 +35,6 @@ public class BluetoothConn {
   }
 
   public void connect() {
-    BluetoothDevice mindset = null;
-    BluetoothSocket btSock = null;
-
     /* The following is my Mindset's address. */
     final String mindsetAddress = "00:13:EF:00:3B:F6";
 
@@ -41,32 +42,51 @@ public class BluetoothConn {
       mindset = myBluetoothAdapter.getRemoteDevice(mindsetAddress);
     } catch (IllegalArgumentException e) {
       e.printStackTrace();
+      error = true;
+      errorString = "Could not get remote device.";
+      return;
     }
 
     /* The following string is the UUID for the serial port profile. */
     final String uuidString = "00001101-0000-1000-8000-00805F9B34FB";
     UUID uuid = UUID.fromString(uuidString);
 
-    if (mindset != null) {
-      try {
-        btSock = mindset.createRfcommSocketToServiceRecord(uuid);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+    try {
+      btSock = mindset.createRfcommSocketToServiceRecord(uuid);
+    } catch (IOException e) {
+      error = true;
+      errorString = "Could not create RFComm socket.";
+      return;
     }
 
-    if (btSock != null) {
-      try {
-        btSock.connect();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+    try {
+      btSock.connect();
+    } catch (IOException e) {
+      error = true;
+      errorString = "Could not connect to RFComm socket.";
+      return;
+    }
+
+    try {
+      dataStream = btSock.getInputStream();
+    } catch (IOException e) {
+      error = true;
+      errorString = "Could net get data stream.";
+      return;
     }
   }
 
   private int counter = 1;
   public String getData() {
-    wasteSomeTime(1000);
-    return "data" + Integer.toString(counter++);
+    wasteSomeTime(500);
+    int datum = 0;
+    try {
+      datum = dataStream.read();
+    } catch (IOException e) {
+      error = true;
+      errorString = "Could not read byte.";
+      return "error";
+    }
+    return "data" + Integer.toString(datum);
   }
 }

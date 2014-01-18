@@ -113,6 +113,7 @@ public class Mindset extends Activity {
       conn.connect();
       if (conn.error) {
         publishProgress("Error: " + conn.errorString);
+        conn.error = false;
       } else {
         publishProgress("Successfully connected!");
 
@@ -120,7 +121,12 @@ public class Mindset extends Activity {
         String data;
         for (;;) {
           data = conn.getData();
-          publishProgress(data);
+          if (conn.error) {
+            publishProgress("Error: " + conn.errorString);
+            conn.error = false;
+          } else {
+            publishProgress(data);
+          }
         }
       }
       return null;
