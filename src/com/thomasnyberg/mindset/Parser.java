@@ -3,8 +3,8 @@ package com.thomasnyberg.mindset;
 import java.lang.Thread;
 import java.io.InputStream;
 
-public class MindsetParser {
-  MindsetParser(InputStream stream) {
+public class Parser {
+  Parser(InputStream stream) {
     dataStream = stream;
   }
 

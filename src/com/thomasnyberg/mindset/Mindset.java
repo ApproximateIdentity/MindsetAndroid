@@ -13,6 +13,7 @@ import android.content.Intent;
 
 import java.io.IOException;
 import java.lang.Thread;
+import java.io.InputStream;
 
 public class Mindset extends Activity {
   private boolean HALT = false;
@@ -22,6 +23,9 @@ public class Mindset extends Activity {
   private BluetoothDevice mindset;
   private final String uuidString = "00001101-0000-1000-8000-00805F9B34FB";
   private BluetoothSocket sock;
+  private MindsetDataStream mindsetDataStream;
+  private final boolean mayInterruptIfRunning = true;
+  private InputStream dataStream = null;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -116,18 +120,42 @@ public class Mindset extends Activity {
       return;
     }
     term.writeLine("Successfully connected to Mindset.");
-    /*new MindsetDataStream().execute();*/
+
+    /* I believe this is currently unbuffered! This is probably not a good
+       idea! Should probably change to use class BufferedInputStream or
+       something else! */
+    try {
+      dataStream = sock.getInputStream();
+    } catch (IOException e) {
+      term.writeLine("Error: Could not open data stream.");
+      HALT = true;
+      return;
+    }
+
+    mindsetDataStream = new MindsetDataStream(dataStream);
+    mindsetDataStream.execute();
   }
 
   @Override
   protected void onStop() {
     super.onStop();
+
+    /* This should test to see if it was actually created before trying to 
+       cancel! As it stands this could give a null pointer exception! */
+    mindsetDataStream.cancel(mayInterruptIfRunning);
+
+    try {
+      dataStream.close();
+    } catch (IOException e) {
+      term.writeLine("Error: Could not close data stream.");
+      HALT = true;
+    }
+
     try {
       sock.close();
     } catch (IOException e) {
       term.writeLine("Error: Could not close Mindset connection.");
       HALT = true;
-      return;
     }
   }
 
@@ -144,37 +172,37 @@ public class Mindset extends Activity {
     }
   }
 
-  private class MindsetDataStream extends AsyncTask<Void, String, Void> {
+  private class MindsetDataStream extends AsyncTask<Void, Integer, Void> {
+    MindsetDataStream(InputStream stream) {
+      dataStream = stream;
+    }
+
+    private InputStream dataStream;
+
     protected void onPreExecute() {}
 
     protected Void doInBackground(Void... params) {
-      publishProgress("Attempting to connect to Mindstream.");
-
-      BluetoothConn conn = new BluetoothConn();
-      conn.connect();
-      if (conn.error) {
-        publishProgress("Error: " + conn.errorString);
-        conn.error = false;
-      } else {
-        publishProgress("Successfully connected!");
-
-        publishProgress("Receiving data...");
-        String data;
-        for (;;) {
-          data = conn.getData();
-          if (conn.error) {
-            publishProgress("Error: " + conn.errorString);
-            conn.error = false;
-          } else {
-            publishProgress(data);
-          }
+      Parser parser = new Parser(dataStream);
+      Integer[] data = new Integer[8];
+      for (;;) {
+        if (isCancelled()) {
+          return null;
         }
+
+        /* Should add some error-checking here. */
+        data = parser.next();
+        publishProgress(data);
       }
-      return null;
     }
 
-    protected void onProgressUpdate(String... progress) {
-      term.writeLine(progress[0]);
+    protected void onProgressUpdate(Integer... progress) {
+      String data = "";
+      for (int i = 0; i < 7; i++) {
+        data += Integer.toString(progress[i]) + " ,";
+      }
+      data += Integer.toString(progress[7]);
+
+      term.writeLine(data);
     }
 
     protected void onPostExecute(Void... result) {}
