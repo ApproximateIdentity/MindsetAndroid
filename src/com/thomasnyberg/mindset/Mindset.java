@@ -15,6 +15,10 @@ import java.io.IOException;
 import java.lang.Thread;
 import java.io.InputStream;
 
+import android.os.Looper;
+import android.os.Handler;
+import android.os.Message;
+
 public class Mindset extends Activity {
   private boolean HALT = false;
   private Terminal term = null;
@@ -23,9 +27,11 @@ public class Mindset extends Activity {
   private BluetoothDevice mindset = null;
   private final String uuidString = "00001101-0000-1000-8000-00805F9B34FB";
   private BluetoothSocket sock = null;
-  private MindsetDataStream mindsetDataStream = null;
   private final boolean mayInterruptIfRunning = true;
   private InputStream dataStream = null;
+  private Handler mainHandler = null;
+  private MindsetStreamThread mindsetStreamThread = null;
+
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -132,17 +138,35 @@ public class Mindset extends Activity {
       return;
     }
 
-    /*mindsetDataStream = new MindsetDataStream(dataStream);
-    mindsetDataStream.execute();*/
+    mainHandler = new Handler() {
+      public void handleMessage(Message msg) {
+        Integer[] data = (Integer[]) msg.obj;
+        String text = "";
+        for (int i = 0; i < 7; i++) {
+          text += Integer.toString(data[i]) + ", ";
+        }
+        text += Integer.toString(data[7]);
+        term.writeLine(text);
+      }
+    };
+
+    mindsetStreamThread = new MindsetStreamThread(mainHandler, dataStream);
+    mindsetStreamThread.start();
   }
 
   @Override
   protected void onStop() {
     super.onStop();
 
-    /* This should test to see if it was actually created before trying to 
-       cancel! As it stands this could give a null pointer exception! */
-    /*mindsetDataStream.cancel(mayInterruptIfRunning);*/
+    if (mindsetStreamThread != null) {
+      mindsetStreamThread.halt();
+      try {
+        mindsetStreamThread.join();
+      } catch (InterruptedException e) {
+        /* Not sure what to do in this case */
+      }
+      mindsetStreamThread = null;
+    }
 
     if (dataStream != null) {
       try {
@@ -178,39 +202,29 @@ public class Mindset extends Activity {
     }
   }
 
-  private class MindsetDataStream extends AsyncTask<Void, Integer, Void> {
-    MindsetDataStream(InputStream stream) {
+  private class MindsetStreamThread extends Thread {
+    MindsetStreamThread(Handler mainHandler, InputStream stream) {
       dataStream = stream;
     }
 
-    private InputStream dataStream;
-
-    protected void onPreExecute() {}
-
-    protected Void doInBackground(Void... params) {
+    @Override
+    public void run() {
       Parser parser = new Parser(dataStream);
       Integer[] data = new Integer[8];
-      for (;;) {
-        if (isCancelled()) {
-          return null;
-        }
-
-        /* Should add some error-checking here. */
+      while (running) {
+        /* Maybe should add some error-checking here. */
         data = parser.next();
-        publishProgress(data);
+        Message msg = Message.obtain();
+        msg.obj = data;
+        mainHandler.sendMessage(msg);
       }
     }
 
-    protected void onProgressUpdate(Integer... progress) {
-      String data = "";
-      for (int i = 0; i < 7; i++) {
-        data += Integer.toString(progress[i]) + " ,";
-      }
-      data += Integer.toString(progress[7]);
-
-      term.writeLine(data);
+    public void halt() {
+      running = false;
     }
 
-    protected void onPostExecute(Void... result) {}
+    private boolean running = true;
+    private InputStream dataStream = null;
   }
 }
