@@ -17,13 +17,13 @@ import java.io.InputStream;
 
 public class Mindset extends Activity {
   private boolean HALT = false;
-  private Terminal term;
-  private BluetoothAdapter myBluetoothAdapter;
+  private Terminal term = null;
+  private BluetoothAdapter myBluetoothAdapter = null;
   private final String mindsetAddress = "00:13:EF:00:3B:F6";
-  private BluetoothDevice mindset;
+  private BluetoothDevice mindset = null;
   private final String uuidString = "00001101-0000-1000-8000-00805F9B34FB";
-  private BluetoothSocket sock;
-  private MindsetDataStream mindsetDataStream;
+  private BluetoothSocket sock = null;
+  private MindsetDataStream mindsetDataStream = null;
   private final boolean mayInterruptIfRunning = true;
   private InputStream dataStream = null;
 
@@ -132,8 +132,8 @@ public class Mindset extends Activity {
       return;
     }
 
-    mindsetDataStream = new MindsetDataStream(dataStream);
-    mindsetDataStream.execute();
+    /*mindsetDataStream = new MindsetDataStream(dataStream);
+    mindsetDataStream.execute();*/
   }
 
   @Override
@@ -142,20 +142,26 @@ public class Mindset extends Activity {
 
     /* This should test to see if it was actually created before trying to 
        cancel! As it stands this could give a null pointer exception! */
-    mindsetDataStream.cancel(mayInterruptIfRunning);
+    /*mindsetDataStream.cancel(mayInterruptIfRunning);*/
 
-    try {
-      dataStream.close();
-    } catch (IOException e) {
-      term.writeLine("Error: Could not close data stream.");
-      HALT = true;
+    if (dataStream != null) {
+      try {
+        dataStream.close();
+        dataStream = null;
+      } catch (IOException e) {
+        term.writeLine("Error: Could not close data stream.");
+        HALT = true;
+      }
     }
 
-    try {
-      sock.close();
-    } catch (IOException e) {
-      term.writeLine("Error: Could not close Mindset connection.");
-      HALT = true;
+    if (sock != null) {
+      try {
+        sock.close();
+        sock = null;
+      } catch (IOException e) {
+        term.writeLine("Error: Could not close Mindset connection.");
+        HALT = true;
+      }
     }
   }
 
