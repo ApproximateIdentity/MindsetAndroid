@@ -1,11 +1,11 @@
 package com.thomasnyberg.mindset;
 
-import android.bluetooth.BluetoothSocket;
 import java.lang.Thread;
+import java.io.InputStream;
 
 public class MindsetParser {
-  MindsetParser(BluetoothSocket socket) {
-    sock = socket;
+  MindsetParser(InputStream stream) {
+    dataStream = stream;
   }
 
   public Integer[] next() {
@@ -14,7 +14,7 @@ public class MindsetParser {
     return data;
   }
 
-  private BluetoothSocket sock;
+  private InputStream dataStream;
 
   private void wasteSomeTime(int msec) {
     try {
