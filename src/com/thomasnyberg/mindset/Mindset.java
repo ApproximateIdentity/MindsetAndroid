@@ -3,24 +3,23 @@ package com.thomasnyberg.mindset;
 import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
+
 import android.bluetooth.BluetoothAdapter;
-import java.util.UUID;
 import android.bluetooth.BluetoothSocket;
 import android.bluetooth.BluetoothDevice;
-
-import android.os.AsyncTask;
+import java.util.UUID;
 import android.content.Intent;
 
-import java.io.IOException;
 import java.lang.Thread;
-import java.io.InputStream;
-
-import android.os.Looper;
 import android.os.Handler;
 import android.os.Message;
 
+import java.io.IOException;
+import java.io.InputStream;
+
+
 public class Mindset extends Activity {
-  private boolean HALT = false;
+  private boolean NO_BLUETOOTH = false;
   private Terminal term = null;
   private BluetoothAdapter myBluetoothAdapter = null;
   private final String mindsetAddress = "00:13:EF:00:3B:F6";
@@ -31,33 +30,92 @@ public class Mindset extends Activity {
   private InputStream dataStream = null;
   private Handler mainHandler = null;
   private MindsetStreamThread mindsetStreamThread = null;
-
+  private boolean initialized = false;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+
     setContentView(R.layout.main);
 
     /* Initialize main window terminal. */
-    /* Here I apparently am assuming this operation will never fail... */
+    /* Here I apparently assume this operation will never fail... */
     term = new Terminal((TextView) findViewById(R.id.mainWindow));
+  }
 
-    /* I am making sure the BluetoothAdapter is turned on in the UI thread
-       out of convenience so that I don't need to start a new activity later.
-       However, even if that is changed later, 
-       BluetoothAdapter.getDefaultAdapter must still first be called here
-       instead of first in the other thread by AsyncTask. It is a bug in
-       Android. See the following link for more info:
 
-          "http://stackoverflow.com/questions/5920578/" +
-          "bluetoothadapter-getdefault-throwing" +
-          "-runtimeexception-while-not-in-activity"
-    */
+  @Override
+  protected void onStart() {
+    super.onStart();
+
+    /* If there is no Bluetooth everything should stop. */
+    if (NO_BLUETOOTH) {
+      return;
+    }
+
+    /* Initialize Bluetooth if necessary. */
+    if (!initialized) {
+      term.writeLine("Attempting to initialize Bluetooth");
+      boolean result = initializeBluetooth();
+      if (!result) { /* Bluetooth failed to initialize */
+        term.writeLine("Error: Failed to initialize Bluetooth.");
+        return;
+      }
+    }
+
+    /* Open connection to Mindset. Attempt MAX_ATTEMPTS times. */
+    final int MAX_ATTEMPTS = 5;
+    boolean result = false;
+    for (int i = 0; i < MAX_ATTEMPTS; i++) {
+      term.writeLine("Attempting to connect to Bluetooth.");
+      result = openBluetoothConnection();
+
+      /* If result is true, connection opened successfully */
+      if (result) {
+        break;
+      }
+      term.writeLine("Error: Failed to connect to Bluetooth.");
+      wasteSomeTime(500);
+    }
+    if (!result) {
+      term.writeLine("Error: Attempt at initializing Bluetooth timed out.");
+      return;
+    }
+
+
+    /* Create a callback which handles data sent back from worker threads. */
+    mainHandler = new Handler() {
+      public void handleMessage(Message msg) {
+        Integer[] data = (Integer[]) msg.obj;
+        String text = "";
+        for (int i = 0; i < 7; i++) {
+          text += Integer.toString(data[i]) + ", ";
+        }
+        text += Integer.toString(data[7]);
+        term.writeLine(text);
+      }
+    };
+
+    /* Create Mindset worker thread. */
+    mindsetStreamThread = new MindsetStreamThread(mainHandler, dataStream);
+    mindsetStreamThread.start();
+  }
+
+  @Override
+  protected void onStop() {
+    super.onStop();
+
+    /* Currently have no return value. Don't know what to do if this fails. */
+    closeBluetoothConnection(mindsetStreamThread);
+  }
+
+
+  private boolean initializeBluetooth() {
     myBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     if (myBluetoothAdapter == null) {
-      term.writeLine("Error: Bluetooth is not supported on this platform.");
-      HALT = true;
-      return;
+      term.writeLine("Error: Bluetooth is not supported on this device.");
+      NO_BLUETOOTH = true;
+      return false;
     }
 
     if (!myBluetoothAdapter.isEnabled()) {
@@ -79,33 +137,24 @@ public class Mindset extends Activity {
 
     if (!myBluetoothAdapter.isEnabled()) {
       term.writeLine("Error: Attempt at enabling Bluetooth timed out.");
-      HALT = true;
-      return;
+      return false;
     } else {
       term.writeLine("Successfully enabled Bluetooth.");
     }
 
-    term.writeLine("Attempting to find Mindset device.");
     try {
       mindset = myBluetoothAdapter.getRemoteDevice(mindsetAddress);
     } catch (IllegalArgumentException e) {
       term.writeLine("Could not find Mindset device.");
-      HALT = true;
-      return;
+      return false;
     }
-    term.writeLine("Successfully found Mindset device.");
+
+    initialized = true;
+
+    return true;
   }
 
-  @Override
-  protected void onStart() {
-    super.onStart();
-
-    if (HALT) {
-      term.writeLine("Error: General error.");
-      term.writeLine("HALT.");
-      return;
-    }
-
+  private boolean openBluetoothConnection() {
     /* Create RFComm socket connection with Mindset. */
     /* The following string is the UUID for the serial port profile. */
     UUID uuid = UUID.fromString(uuidString);
@@ -113,17 +162,14 @@ public class Mindset extends Activity {
       sock = mindset.createRfcommSocketToServiceRecord(uuid);
     } catch (IOException e) {
       term.writeLine("Error: Could not create RFComm socket.");
-      HALT = true;
-      return;
+      return false;
     }
 
-    term.writeLine("Attempting to connect to Mindset.");
     try {
       sock.connect();
     } catch (IOException e) {
       term.writeLine("Could not connect to Mindset.");
-      HALT = true;
-      return;
+      return false;
     }
     term.writeLine("Successfully connected to Mindset.");
 
@@ -134,30 +180,14 @@ public class Mindset extends Activity {
       dataStream = sock.getInputStream();
     } catch (IOException e) {
       term.writeLine("Error: Could not open data stream.");
-      HALT = true;
-      return;
+      return false;
     }
 
-    mainHandler = new Handler() {
-      public void handleMessage(Message msg) {
-        Integer[] data = (Integer[]) msg.obj;
-        String text = "";
-        for (int i = 0; i < 7; i++) {
-          text += Integer.toString(data[i]) + ", ";
-        }
-        text += Integer.toString(data[7]);
-        term.writeLine(text);
-      }
-    };
-
-    mindsetStreamThread = new MindsetStreamThread(mainHandler, dataStream);
-    mindsetStreamThread.start();
+    return true;
   }
 
-  @Override
-  protected void onStop() {
-    super.onStop();
-
+  private void closeBluetoothConnection(MindsetStreamThread
+                                        mindsetStreamThread) {
     if (mindsetStreamThread != null) {
       mindsetStreamThread.halt();
       try {
@@ -174,7 +204,6 @@ public class Mindset extends Activity {
         dataStream = null;
       } catch (IOException e) {
         term.writeLine("Error: Could not close data stream.");
-        HALT = true;
       }
     }
 
@@ -184,14 +213,8 @@ public class Mindset extends Activity {
         sock = null;
       } catch (IOException e) {
         term.writeLine("Error: Could not close Mindset connection.");
-        HALT = true;
       }
     }
-  }
-
-  @Override
-  protected void onResume() {
-    super.onResume();
   }
 
   private void wasteSomeTime(int msec) {
