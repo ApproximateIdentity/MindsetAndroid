@@ -10,6 +10,18 @@
   android:layout_width="wrap_content"
   android:layout_height="wrap_content"
   />
+<EditText
+  android:id="@+id/concept1"
+  android:layout_width="fill_parent"
+  android:layout_height="wrap_content"
+  android:text="Concept 1"
+  />
+<EditText
+  android:id="@+id/concept2"
+  android:layout_width="fill_parent"
+  android:layout_height="wrap_content"
+  android:text="Concept 2"
+  />
 <Button
   android:id="@+id/button"
   android:layout_width="fill_parent"
