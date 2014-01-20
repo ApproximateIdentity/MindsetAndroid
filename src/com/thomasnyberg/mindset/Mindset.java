@@ -88,10 +88,10 @@ public class Mindset extends Activity {
       public void handleMessage(Message msg) {
         Integer[] data = (Integer[]) msg.obj;
         String text = "";
-        for (int i = 0; i < 7; i++) {
-          text += Integer.toString(data[i]) + ", ";
-        }
-        text += Integer.toString(data[7]);
+        text += Integer.toString(data[0]) + ", ";
+        text += Integer.toString(data[1]) + ", ... ,";
+        text += Integer.toString(data[9]) + ", ";
+        text += Integer.toString(data[10]);
         term.writeLine(text);
       }
     };
