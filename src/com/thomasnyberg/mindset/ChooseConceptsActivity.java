@@ -17,12 +17,12 @@ public class ChooseConceptsActivity extends Activity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    /*setContentView(R.layout.choose_concepts);
+    setContentView(R.layout.choose_concepts);
     
     textView = (TextView) findViewById(R.id.main_window);
-    textView.setText("Use this screen to set the concepts.");*/
+    textView.setText("Use this screen to set the concepts.");
 
-    /*addListenerOnButton();*/
+    addListenerOnButton();
   }
 
   private void addListenerOnButton() {

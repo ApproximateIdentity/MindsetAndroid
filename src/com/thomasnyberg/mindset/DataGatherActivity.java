@@ -12,7 +12,7 @@ public class DataGatherActivity extends Activity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.data_gather);
 
-    textView = (TextView) findViewById(R.id.data_gather);
+    textView = (TextView) findViewById(R.id.main_window);
     textView.setText("Use this screen to gather data.");
   }
 }

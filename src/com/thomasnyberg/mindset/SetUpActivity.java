@@ -12,7 +12,7 @@ public class SetUpActivity extends Activity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.set_up);
 
-    textView = (TextView) findViewById(R.id.set_up);
+    textView = (TextView) findViewById(R.id.main_window);
     textView.setText("Use this screen to do a one-time setup.");
   }
 }

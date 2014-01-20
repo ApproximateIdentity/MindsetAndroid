@@ -12,7 +12,7 @@ public class PredictActivity extends Activity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.predict);
 
-    textView = (TextView) findViewById(R.id.predict);
+    textView = (TextView) findViewById(R.id.main_window);
     textView.setText("Use this screen to make predictions.");
   }
 }
