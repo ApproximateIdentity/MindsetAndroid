@@ -40,7 +40,7 @@ public class Mindset extends Activity {
 
     /* Initialize main window terminal. */
     /* Here I apparently assume this operation will never fail... */
-    term = new Terminal((TextView) findViewById(R.id.mainWindow));
+    term = new Terminal((TextView) findViewById(R.id.mainWindow), 30);
   }
 
 

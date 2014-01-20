@@ -12,7 +12,7 @@ import android.view.View.OnClickListener;
 import android.content.Intent;
 
 public class ChooseConceptsActivity extends Activity {
-  private TextView textView;
+  private Terminal term = null;
   private EditText concept1view, concept2view;
   private Button button;
 
@@ -21,8 +21,8 @@ public class ChooseConceptsActivity extends Activity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.choose_concepts);
     
-    textView = (TextView) findViewById(R.id.main_window);
-    textView.setText("Choose two concepts.");
+    term = new Terminal((TextView) findViewById(R.id.main_window), 10);
+    term.writeLine("Choose two concepts.");
 
     concept1view = (EditText) findViewById(R.id.concept1);
     concept2view = (EditText) findViewById(R.id.concept2);

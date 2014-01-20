@@ -13,8 +13,9 @@ import android.content.Intent;
 public class DataGatherActivity extends Activity {
   private String concept1;
   private String concept2;
-  private TextView textView;
-  private Button button;
+  private Terminal term;
+  private Button toggleConcept, toggleSave;
+  private Button predictButton;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -26,10 +27,13 @@ public class DataGatherActivity extends Activity {
 
     setContentView(R.layout.data_gather);
 
-    textView = (TextView) findViewById(R.id.main_window);
-    String text = "Concept 1: " + concept1 + "\n";
-    text += "Concept 2: " + concept2 + "\n";
-    textView.setText(text);
+    term = new Terminal((TextView) findViewById(R.id.main_window), 10);
+    term.writeLine("Choose two concepts.");
+
+    String text = "Concept 1: " + concept1;
+    term.writeLine(text);
+    text = "Concept 2: " + concept2;
+    term.writeLine(text);
 
     addListenerOnButton();
   }
@@ -37,9 +41,9 @@ public class DataGatherActivity extends Activity {
   private void addListenerOnButton() {
     final Context context = this;
 
-    button = (Button) findViewById(R.id.button);
+    predictButton = (Button) findViewById(R.id.predict);
 
-    button.setOnClickListener(new OnClickListener() {
+    predictButton.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View arg0) {
         Intent intent = new Intent(context, PredictActivity.class);

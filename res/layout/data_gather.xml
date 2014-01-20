@@ -5,15 +5,38 @@
   android:layout_width="fill_parent"
   android:layout_height="fill_parent"
   >
-<TextView
-  android:id="@+id/main_window"
-  android:layout_width="wrap_content"
-  android:layout_height="wrap_content"
-  />
-<Button
-  android:id="@+id/button"
-  android:layout_width="fill_parent"
-  android:layout_height="wrap_content"
-  android:text="Click to start predicting!"
-  />
+  <LinearLayout
+    android:orientation="horizontal"
+    android:layout_width="fill_parent"
+    android:layout_gravity="bottom"
+    android:layout_height="wrap_content"
+    >
+    <Button
+      android:id="@+id/toggle_concept"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="Toggle Concept"
+      android:layout_gravity="bottom"
+      android:layout_weight="1"
+      />
+    <Button
+      android:id="@+id/toggle_save"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="Toggle Save"
+      android:layout_gravity="bottom"
+      android:layout_weight="1"
+      />
+    </LinearLayout>
+  <TextView
+    android:id="@+id/main_window"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    />
+  <Button
+    android:id="@+id/predict"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:text="Click to start predicting!"
+    />
 </LinearLayout>
