@@ -14,15 +14,16 @@ import android.content.Intent;
 public class ChooseConceptsActivity extends Activity {
   private Terminal term = null;
   private EditText concept1view, concept2view;
-  private Button button;
+  private Button goToDataGatherButton;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.choose_concepts);
     
-    term = new Terminal((TextView) findViewById(R.id.main_window), 10);
-    term.writeLine("Choose two concepts.");
+    term = new Terminal((TextView) findViewById(R.id.main_window), 2);
+    term.writeLine("Choose two concepts. Test 1");
+    term.writeLine("Data 1");
 
     concept1view = (EditText) findViewById(R.id.concept1);
     concept2view = (EditText) findViewById(R.id.concept2);
@@ -33,9 +34,9 @@ public class ChooseConceptsActivity extends Activity {
   private void addListenerOnButton() {
     final Context context = this;
 
-    button = (Button) findViewById(R.id.button);
+    goToDataGatherButton = (Button) findViewById(R.id.button);
 
-    button.setOnClickListener(new OnClickListener() {
+    goToDataGatherButton.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View arg0) {
         String concept1 = concept1view.getText().toString();

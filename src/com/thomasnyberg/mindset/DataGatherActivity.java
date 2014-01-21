@@ -10,12 +10,18 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.content.Intent;
 
+import java.lang.Thread;
+
 public class DataGatherActivity extends Activity {
   private String concept1;
   private String concept2;
   private Terminal term;
-  private Button toggleConcept, toggleSave;
+
   private Button predictButton;
+  private Button toggleConceptButton, toggleSaveButton;
+
+  private int toggleConcept = 1;
+  private boolean toggleSave = false;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -27,27 +33,67 @@ public class DataGatherActivity extends Activity {
 
     setContentView(R.layout.data_gather);
 
-    term = new Terminal((TextView) findViewById(R.id.main_window), 10);
-    term.writeLine("Choose two concepts.");
-
-    String text = "Concept 1: " + concept1;
-    term.writeLine(text);
-    text = "Concept 2: " + concept2;
-    term.writeLine(text);
-
-    addListenerOnButton();
-  }
-
-  private void addListenerOnButton() {
-    final Context context = this;
+    term = new Terminal((TextView) findViewById(R.id.main_window), 11);
 
     predictButton = (Button) findViewById(R.id.predict);
+
+    toggleConceptButton = (Button) findViewById(R.id.toggle_concept);
+    toggleConceptButton.setText(concept1);
+
+    toggleSaveButton = (Button) findViewById(R.id.toggle_save);
+    toggleSaveButton.setText("Save: Off");
+
+    addListenerOnButtons();
+
+    startPrintingShit();
+  }
+
+  private void startPrintingShit() {
+    term.writeLine("Data 1");
+  }
+
+  private void wasteSomeTime(int msec) {
+    try {
+      Thread.sleep(msec);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+  }
+
+  private void addListenerOnButtons() {
+    final Context context = this;
 
     predictButton.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View arg0) {
         Intent intent = new Intent(context, PredictActivity.class);
         startActivity(intent);
+      }
+    });
+
+    toggleConceptButton.setOnClickListener(new OnClickListener() {
+      @Override
+      public void onClick(View arg0) {
+        if (toggleConcept == 1) {
+          toggleConcept = 2;
+          toggleConceptButton.setText(concept2);
+        } else {
+          toggleConcept = 1;
+          toggleConceptButton.setText(concept1);
+        }
+      }
+    });
+
+    toggleSaveButton.setOnClickListener(new OnClickListener() {
+      @Override
+      public void onClick(View arg0) {
+        if (toggleSave) {
+          toggleSave = false;
+          toggleSaveButton.setText("Save: Off");
+        } else {
+          toggleSave = true;
+          toggleSaveButton.setText("Save: On");
+        }
       }
     });
   }

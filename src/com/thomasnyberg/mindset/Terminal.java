@@ -32,7 +32,7 @@ public class Terminal {
     nextLine = 0;
 
     for (int i = 0; i < maxLines; i++) {
-      buffer[i] = "\n";
+      buffer[i] = "";
     }
     writeBuffer();
   }
