@@ -33,7 +33,7 @@ public class DataGatherActivity extends Activity {
 
     setContentView(R.layout.data_gather);
 
-    term = new Terminal((TextView) findViewById(R.id.main_window), 11);
+    term = new Terminal((TextView) findViewById(R.id.main_window), 22);
 
     predictButton = (Button) findViewById(R.id.predict);
 

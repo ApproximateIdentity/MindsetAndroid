@@ -4,28 +4,35 @@
   android:orientation="vertical"
   android:layout_width="fill_parent"
   android:layout_height="fill_parent"
+  android:windowSoftInputMode="adjustResize"
   >
 <TextView
   android:id="@+id/main_window"
   android:layout_width="fill_parent"
-  android:layout_height="wrap_content"
+  android:layout_height="fill_parent"
+  android:layout_weight="1"
   />
 <EditText
   android:id="@+id/concept1"
   android:layout_width="fill_parent"
   android:layout_height="wrap_content"
-  android:text="Concept 1"
+  andoid_layout_weight="2"
+  android:text="dog"
+  android:layout_gravity="bottom"
   />
 <EditText
   android:id="@+id/concept2"
   android:layout_width="fill_parent"
   android:layout_height="wrap_content"
-  android:text="Concept 2"
+  android:text="house"
+  andoid_layout_weight="2"
+  android:layout_gravity="bottom"
   />
 <Button
   android:id="@+id/button"
   android:layout_width="fill_parent"
   android:layout_height="wrap_content"
   android:text="Click to start gathering data!"
+  android:layout_gravity="bottom"
   />
 </LinearLayout>

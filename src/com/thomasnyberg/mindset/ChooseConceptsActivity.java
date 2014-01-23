@@ -21,9 +21,10 @@ public class ChooseConceptsActivity extends Activity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.choose_concepts);
     
-    term = new Terminal((TextView) findViewById(R.id.main_window), 2);
-    term.writeLine("Choose two concepts. Test 1");
-    term.writeLine("Data 1");
+    term = new Terminal((TextView) findViewById(R.id.main_window), 3);
+    String text = "Welcome!\n\n";
+    text += "Choose two concepts below to begin using the program.";
+    term.writeLine(text);
 
     concept1view = (EditText) findViewById(R.id.concept1);
     concept2view = (EditText) findViewById(R.id.concept2);

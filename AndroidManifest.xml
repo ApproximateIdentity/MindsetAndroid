@@ -10,6 +10,7 @@
     android:icon="@drawable/ic_launcher"
     >
     <activity
+      android:windowSoftInputMode="adjustResize"
       android:name=".ChooseConceptsActivity"
       android:label="@string/app_name"
       >
