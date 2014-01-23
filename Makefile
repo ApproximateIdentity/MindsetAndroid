@@ -1,4 +1,5 @@
 all:
+	rm -rf bin/*
 	ant debug
 
 install:

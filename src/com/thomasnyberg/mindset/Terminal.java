@@ -3,8 +3,10 @@ package com.thomasnyberg.mindset;
 import android.widget.TextView;
 
 public class Terminal {
-  Terminal(TextView win) {
+  Terminal(TextView win, int lines) {
     window = win;
+    maxLines = lines;
+    buffer = new String[maxLines];
     initBuffer();
   }
 
@@ -22,15 +24,15 @@ public class Terminal {
 
   private TextView window;
   /* Hardcoded value is bad, but works for my phone. */
-  private final int maxLines = 30;
+  private int maxLines;
   private int nextLine;
-  private String[] buffer = new String[maxLines];
+  private String[] buffer;
 
   private void initBuffer() {
     nextLine = 0;
 
     for (int i = 0; i < maxLines; i++) {
-      buffer[i] = "\n";
+      buffer[i] = "";
     }
     writeBuffer();
   }
