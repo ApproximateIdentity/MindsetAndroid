@@ -10,9 +10,21 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.content.Intent;
 
+import java.io.IOException;
+
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothSocket;
+import android.bluetooth.BluetoothDevice;
+
 import java.lang.Thread;
+import android.os.Handler;
+import android.os.Message;
+
+import java.io.InputStream;
+import java.util.UUID;
 
 public class DataGatherActivity extends Activity {
+  private MindsetStreamThread mindsetStreamThread = null;
   private String concept1;
   private String concept2;
   private Terminal term;
@@ -22,6 +34,15 @@ public class DataGatherActivity extends Activity {
 
   private int toggleConcept = 1;
   private boolean toggleSave = false;
+
+  private Handler mainHandler = null;
+  private InputStream dataStream = null;
+
+  private BluetoothAdapter myBluetoothAdapter = null;
+  private BluetoothSocket sock = null;
+  private BluetoothDevice mindset = null;
+  private final String uuidString = "00001101-0000-1000-8000-00805F9B34FB";
+  private final String mindsetAddress = "00:13:EF:00:3B:F6";
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -46,6 +67,91 @@ public class DataGatherActivity extends Activity {
     addListenerOnButtons();
 
     startPrintingShit();
+
+    /* Seems like this is out of place */
+    myBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+    mindset = myBluetoothAdapter.getRemoteDevice(mindsetAddress);
+  }
+
+  @Override
+  public void onStart() {
+    super.onStart();
+
+    /* Open connection to Mindset. Attempt MAX_ATTEMPTS times. */
+    final int MAX_ATTEMPTS = 5;
+    boolean result = false;
+    for (int i = 0; i < MAX_ATTEMPTS; i++) {
+      term.writeLine("Attempting to connect to Bluetooth.");
+      result = openBluetoothConnection();
+
+      /* If result is true, connection opened successfully */
+      if (result) {
+        break;
+      }
+      term.writeLine("Error: Failed to connect to Bluetooth.");
+      wasteSomeTime(500);
+    }
+    if (!result) {
+      term.writeLine("Error: Attempt at initializing Bluetooth timed out.");
+      return;
+    }
+
+
+    /* Create a callback which handles data sent back from worker threads. */
+    mainHandler = new Handler() {
+      public void handleMessage(Message msg) {
+        Integer[] data = (Integer[]) msg.obj;
+        String text = "";
+        text += Integer.toString(data[0]) + ", ";
+        text += Integer.toString(data[1]) + ", ... ,";
+        text += Integer.toString(data[9]) + ", ";
+        text += Integer.toString(data[10]);
+        term.writeLine(text);
+      }
+    };
+
+    /* Create Mindset worker thread. */
+    mindsetStreamThread = new MindsetStreamThread(mainHandler, dataStream);
+    mindsetStreamThread.start();
+  }
+
+  @Override
+  public void onStop() {
+    super.onStop();
+
+    /* Currently have no return value. Don't know what to do if this fails. */
+    closeBluetoothConnection(mindsetStreamThread);
+  }
+
+  private void closeBluetoothConnection(MindsetStreamThread
+                                        mindsetStreamThread) {
+    if (mindsetStreamThread != null) {
+      mindsetStreamThread.halt();
+      try {
+        mindsetStreamThread.join();
+      } catch (InterruptedException e) {
+        /* Not sure what to do in this case */
+      }
+      mindsetStreamThread = null;
+    }
+
+    if (dataStream != null) {
+      try {
+        dataStream.close();
+        dataStream = null;
+      } catch (IOException e) {
+        term.writeLine("Error: Could not close data stream.");
+      }
+    }
+
+    if (sock != null) {
+      try {
+        sock.close();
+        sock = null;
+      } catch (IOException e) {
+        term.writeLine("Error: Could not close Mindset connection.");
+      }
+    }
   }
 
   private void startPrintingShit() {
@@ -96,5 +202,63 @@ public class DataGatherActivity extends Activity {
         }
       }
     });
+  }
+
+  private boolean openBluetoothConnection() {
+    /* Create RFComm socket connection with Mindset. */
+    /* The following string is the UUID for the serial port profile. */
+    UUID uuid = UUID.fromString(uuidString);
+    try {
+      sock = mindset.createRfcommSocketToServiceRecord(uuid);
+    } catch (IOException e) {
+      term.writeLine("Error: Could not create RFComm socket.");
+      return false;
+    }
+
+    try {
+      sock.connect();
+    } catch (IOException e) {
+      term.writeLine("Could not connect to Mindset.");
+      return false;
+    }
+    term.writeLine("Successfully connected to Mindset.");
+
+    /* I believe this is currently unbuffered! This is probably not a good
+       idea! Should probably change to use class BufferedInputStream or
+       something else! */
+    try {
+      dataStream = sock.getInputStream();
+    } catch (IOException e) {
+      term.writeLine("Error: Could not open data stream.");
+      return false;
+    }
+
+    return true;
+  }
+
+  private class MindsetStreamThread extends Thread {
+    MindsetStreamThread(Handler mainHandler, InputStream stream) {
+      dataStream = stream;
+    }
+
+    @Override
+    public void run() {
+      Parser parser = new Parser(dataStream);
+      Integer[] data = new Integer[8];
+      while (running) {
+        /* Maybe should add some error-checking here. */
+        data = parser.next();
+        Message msg = Message.obtain();
+        msg.obj = data;
+        mainHandler.sendMessage(msg);
+      }
+    }
+
+    public void halt() {
+      running = false;
+    }
+
+    private boolean running = true;
+    private InputStream dataStream = null;
   }
 }
