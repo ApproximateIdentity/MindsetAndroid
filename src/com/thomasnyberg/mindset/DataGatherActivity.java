@@ -23,6 +23,9 @@ import android.os.Message;
 import java.io.InputStream;
 import java.util.UUID;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class DataGatherActivity extends Activity {
   private MindsetStreamThread mindsetStreamThread = null;
   private String concept1;
@@ -43,6 +46,8 @@ public class DataGatherActivity extends Activity {
   private BluetoothDevice mindset = null;
   private final String uuidString = "00001101-0000-1000-8000-00805F9B34FB";
   private final String mindsetAddress = "00:13:EF:00:3B:F6";
+
+  private List<double[]> mindsetData;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -77,6 +82,8 @@ public class DataGatherActivity extends Activity {
   public void onStart() {
     super.onStart();
 
+    mindsetData = new ArrayList<double[]>();
+
     /* Open connection to Mindset. Attempt MAX_ATTEMPTS times. */
     final int MAX_ATTEMPTS = 5;
     boolean result = false;
@@ -101,12 +108,35 @@ public class DataGatherActivity extends Activity {
     mainHandler = new Handler() {
       public void handleMessage(Message msg) {
         Integer[] data = (Integer[]) msg.obj;
+
+        /* First print the data */
         String text = "";
         text += Integer.toString(data[0]) + ", ";
         text += Integer.toString(data[1]) + ", ... ,";
         text += Integer.toString(data[9]) + ", ";
         text += Integer.toString(data[10]);
+        text += " <---> ";
+        if (toggleConcept == 1) {
+          text += concept1;
+        } else {
+          text += concept2;
+        }
+
         term.writeLine(text);
+
+        /* Next save the data if necessary. */
+        
+        /* Replace first element (signal quality) with tag. */
+        if (toggleSave) {
+          data[0] = toggleConcept;
+          int size = data.length;
+          double[] doubleData = new double[size];
+          for (int i = 0; i < size; i++) {
+            doubleData[i] = (double) data[i];
+          }
+
+          mindsetData.add(doubleData);
+        }
       }
     };
 
@@ -119,8 +149,17 @@ public class DataGatherActivity extends Activity {
   public void onStop() {
     super.onStop();
 
+    mindsetStreamThread.halt();
+    try {
+      mindsetStreamThread.join();
+    } catch (InterruptedException e) {
+      /* Do something... */
+    }
+
     /* Currently have no return value. Don't know what to do if this fails. */
     closeBluetoothConnection(mindsetStreamThread);
+
+    mindsetData = null;
   }
 
   private void closeBluetoothConnection(MindsetStreamThread
@@ -172,7 +211,19 @@ public class DataGatherActivity extends Activity {
     predictButton.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View arg0) {
+        double[][] arrayData = new double[mindsetData.size()][];
+        mindsetData.toArray(arrayData);
+  
+        /* Create logistic class and save coefficients. */
+        LogisticRegression lr = new LogisticRegression();
+        lr.data = arrayData;
+        lr.fit();
+        double[] coefficients = lr.getCoefficients();
+
         Intent intent = new Intent(context, PredictActivity.class);
+        intent = intent.putExtra("concept1", concept1);
+        intent = intent.putExtra("concept2", concept2);
+        intent = intent.putExtra("coefficients", coefficients);
         startActivity(intent);
       }
     });
